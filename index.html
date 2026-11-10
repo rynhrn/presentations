@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <title>Speaking Tracker</title>
+    <style>
+        :root {
+            --bg: #f3f4f1;
+            --fg: #1c2024;
+            --card: #fff;
+            --mut: #667068;
+            --line: #d8dcd6;
+            --acc: #1d4ed8;
+            --ok: #17794a;
+            --warn: #b45f06;
+            --bad: #bf3a2b;
+            color-scheme: light
+        }
+
+        @media(prefers-color-scheme:dark) {
+            :root:not([data-theme]) {
+                --bg: #101310;
+                --fg: #e7eae6;
+                --card: #1a1f1a;
+                --mut: #98a299;
+                --line: #2c342d;
+                --acc: #7da2ff;
+                --ok: #4cc38a;
+                --warn: #f0a840;
+                --bad: #ff7b6b;
+                color-scheme: dark
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #010101;
+            --fg: #eee;
+            --card: #111;
+            --mut: #98a299;
+            --line: #333;
+            --acc: white;
+            --ok: #4cc38a;
+            --warn: #f0a840;
+            --bad: #ff7b6b;
+            color-scheme: dark
+        }
+
+        :root[data-theme="light"] {
+            color-scheme: light
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0
+        }
+
+        body {
+            font: 16px/1.35 -apple-system, system-ui, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: var(--card);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 10px
+        }
+
+        header .cr {
+            flex: 1;
+            font-size: 14px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        header .cr span {
+            padding: 10px 2px
+        }
+
+        main {
+            padding: 12px;
+            max-width: 640px;
+            margin: auto;
+            padding-bottom: 80px
+        }
+
+        button,
+        select,
+        input,
+        textarea {
+            font: inherit;
+            color: inherit
+        }
+
+        button {
+            min-height: 48px;
+            padding: 0 14px;
+            border-radius: 4px;
+            border: 1px solid var(--line);
+            background: var(--card);
+            cursor: pointer
+        }
+
+        button.small {
+            min-height: 32px;
+            padding: 0 8px;
+            font-size: 13px
+        }
+
+        button.p,
+        button.on {
+            background: var(--acc);
+            color: var(--bg);
+            border-color: var(--acc)
+        }
+
+        button.d {
+            color: var(--bad)
+        }
+
+        button:disabled,
+        input:disabled,
+        textarea:disabled {
+            opacity: .45
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 12px;
+            margin: 0 0 10px
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .row>* {
+            flex: 0 0 auto
+        }
+
+        .mt-8 {
+            margin-top: 8px
+        }
+
+        .g {
+            flex: 1 !important
+        }
+
+        .li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 52px;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+        }
+
+        h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--mut);
+            margin: 16px 0 6px
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--line);
+            background: var(--card);
+            min-height: 44px;
+            margin: 4px 0 8px
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--line);
+            flex: 0 0 12px
+        }
+
+        .dot.draft {
+            background: var(--warn)
+        }
+
+        .dot.confirmed {
+            background: var(--ok)
+        }
+
+        .t {
+            font: 700 52px/1 ui-monospace, Menlo, monospace;
+            font-variant-numeric: tabular-nums
+        }
+
+        .t.ok {
+            color: var(--ok)
+        }
+
+        .t.warn {
+            color: var(--warn)
+        }
+
+        .m {
+            color: var(--mut);
+            font-size: 13px
+        }
+
+        .chip {
+            border-radius: 2px;
+            min-height: 32px;
+            padding: 0 8px;
+            font-size: 13px;
+            border: 1px solid var(--line);
+            background: var(--card);
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        try {
+            const theme = localStorage.getItem('speakingTracker.theme');
+            if (theme == 'light' || theme == 'dark') document.documentElement.dataset.theme = theme;
+        } catch (e) { }
+    </script>
+</head>
+
+<body>
+    <header id="hd"></header>
+    <main id="app"></main>
+    <script>
+        const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const KEY = 'speakingTracker.v1'; let DB; try { DB = JSON.parse(localStorage.getItem(KEY)) } catch (e) { }
+        DB = DB || { v: 1, backupAt: 0, lastRoute: '', running: null, semesters: {} };
+        const save = () => { try { localStorage.setItem(KEY, JSON.stringify(DB)) } catch (e) { alert('Could not save. Export a backup now.') } };
+        navigator.storage?.persist?.();
+        const SEC = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') };
+        const slug = s => s.trim().replace(/[\/#?%]+/g, '-'), H = (...a) => a.map(encodeURIComponent).join('/');
+        const getp = (o, p) => p.split('.').reduce((a, k) => a?.[k], o), setp = (o, p, v) => { const k = p.split('.'), l = k.pop(); k.reduce((a, x) => a[x], o)[l] = v };
+        const newCfg = () => ({ assessments: ['S1', 'S2'], assignedSec: { S1: 210, S2: 210 }, chips: { grammar: ['Tense', 'Subject-verb agreement', 'Articles', 'Prepositions', 'Plurals', 'Word form', 'Word order', 'Incomplete sentence'], pron: ['Key word mispronounced'] } });
+        const newRec = () => ({ status: 'pending', sec: 0, startedAt: null, phone: false, read80: false, errors: [], examples: {}, creative: 4, cohesion: 4, grammarOverride: null, delivery: { fluency: 1, tone: 1, gestures: 1, eye: 1, stance: 1 }, ppt: { readable: 1, text: 1, visuals: 1, purpose: 1 }, latePresent: 0, pptLateDays: 0, revisions: 0, notesOnlyRev: false, noAttn: false, note: '', confirmedAt: null, editedAt: null, prev: null });
+        let P = {};
+        function parse() {
+            const p = decodeURIComponent(location.hash.slice(1)).split('/').filter(Boolean);
+            P = { p, sem: p[0] == 's' ? p[1] : null, cls: p[2] == 'c' ? p[3] : null, asm: p[4], id: p[6], view: p[0] == 'backup' ? 'backup' : p[5] == 'settings' ? 'settings' : p[5] == 'st' ? (p[7] == 'review' ? 'review' : 'live') : p.length >= 5 ? 'roster' : p.length >= 2 ? 'classes' : 'home' }
+        }
+        const S = () => DB.semesters[P.sem], C = () => S()?.classes[P.cls], B = () => H('s', P.sem, 'c', P.cls, P.asm);
+        const rec = () => { const c = C(); return (c.records[P.asm] ??= {})[P.id] ??= newRec() };
+        const el = r => r.sec + (r.startedAt ? (Date.now() - r.startedAt) / 1000 : 0);
+        const stopRec = r => { if (r.startedAt) { r.sec = Math.round(el(r)); r.startedAt = null } };
+        let WL; async function wl(on) { try { if (on) WL = await navigator.wakeLock.request('screen'); else { await WL?.release(); WL = null } } catch (e) { } }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && DB.running) wl(true) });
+        function calc(r, c, asm) {
+            const n = o => Object.values(o).filter(Boolean).length, types = new Set(r.errors.map(e => e.type)).size, gb = types <= 3 ? 4 : types <= 6 ? 3 : 2;
+            const cap = (v, m) => v == null ? null : r.read80 ? Math.min(v, m) : v;
+            const S = { creative: cap(r.creative, 3), cohesion: cap(r.cohesion, 3), grammar: cap(r.grammarOverride ?? gb, 3), delivery: cap(Math.max(1, n(r.delivery) - 1), 2), ppt: Math.max(1, n(r.ppt)) };
+            const as = c.settings.assignedSec[asm] || 210, len = r.noAttn ? 2 : (r.sec > 0 && Math.abs(r.sec - as) > 60 ? 1 : 0);
+            const pen = len + r.latePresent + r.pptLateDays + Math.max(0, r.revisions - 1) + (r.notesOnlyRev ? 1 : 0), sum = Object.values(S).reduce((a, v) => a + (v || 0), 0);
+            return { S, types, len, pen, total: Math.max(8, sum - pen), ready: r.creative != null && r.cohesion != null }
+        }
+        const btn = (a, v, t, cl = '', x = '') => `<button class="${cl}" data-a="${a}" data-v="${esc(v)}" ${x}>${t}</button>`;
+        const btnSmall = (a, v, t, cl = '', x = '') => `<button class="${cl} small" data-a="${a}" data-v="${esc(v)}" ${x}>${t}</button>`;
+        const prog = (c, a) => `${c.roster.filter(r => c.records[a]?.[r.id]?.status == 'confirmed').length}/${c.roster.length}`;
+        const nextOf = (c, asm) => c.roster.find(x => !c.records[asm]?.[x.id]?.confirmedAt);
+        function vHome() {
+            const ks = Object.keys(DB.semesters).reverse(), age = DB.backupAt ? Math.floor((Date.now() - DB.backupAt) / 864e5) + ' days ago' : 'never';
+            return `<h2>Semesters</h2>` + ks.map(k => `<button class="li" data-a="go" data-v="${esc(H('s', k))}"><b class="g">${esc(DB.semesters[k].label)}</b><span class="m">${Object.keys(DB.semesters[k].classes).length} classes ›</span></button>`).join('') + btn('newSem', 'newSem', '+ New semester', 'p') + `<h2>Backup</h2><div class="card"><div class="m" style="margin-bottom:8px">Last backup: ${age}</div>${btn('go', H('backup'), 'Backup and restore')}</div>`
+        }
+        function vClasses() { const s = S(); return `<h2>${esc(s.label)}</h2>` + Object.keys(s.classes).map(k => { const c = s.classes[k], a = c.settings.assessments; return `<button class="li" data-a="go" data-v="${esc(H('s', P.sem, 'c', k, a[0]))}"><span class="g"><b>${esc(k)}</b><br><span class="m">${a.map(x => x + ' ' + prog(c, x)).join(' · ')}</span></span>›</button>` }).join('') + btn('newCls', 'newClass', '+ New class', 'p') + `<div class="row" style="margin-top:12px">${btn('csvSem', '', 'Export all CSV')}${btn('renSem', '', 'Rename')}${btn('delSem', '', 'Delete', 'd')}</div>` }
+        function vRoster() {
+            const c = C(), rs = c.records[P.asm] || {}, nx = nextOf(c, P.asm);
+            return `<div class="row" style="margin-bottom:10px">${c.settings.assessments.map(x => btn('go', H('s', P.sem, 'c', P.cls, x), x, x == P.asm ? 'on' : '')).join('')}${btn('go', B() + '/settings', 'Settings')}</div>` +
+                (!c.roster.length ? '<div class="card">No students yet. Open Settings to import a roster.</div>' : nx ? btn('go', B() + '/st/' + nx.id, 'Continue: ' + esc(nx.name), 'p', 'style="width:100%;margin-bottom:10px"') : '<div class="card">All students confirmed.</div>') +
+                c.roster.map(r => { const x = rs[r.id], st = x?.status || 'pending'; return `<button class="li" data-a="go" data-v="${esc(B() + '/st/' + r.id)}"><i class="dot ${st}"></i><span class="g">${r.id} ${esc(r.name)}</span><span class="m">${x && x.sec ? SEC(x.sec) : ''}${st == 'confirmed' ? ' · ' + calc(x, c, P.asm).total + '/20' : ''}</span></button>` }).join('') +
+                `<div class="row" style="margin-top:12px">${btn('csv', '', 'Export CSV')}${btn('csvCopy', '', 'Copy CSV')}</div>`
+        }
+        const GL = { fluency: 'Fluency', tone: 'Tone', gestures: 'Gestures', eye: 'Eye contact', stance: 'Stance' }, PL = { readable: 'Readable', text: 'Restrained text', visuals: 'Useful visuals', purpose: 'Clear purpose' }, CN = { creative: 'Creative ideas', cohesion: 'Cohesion', grammar: 'Grammar and pronunciation', delivery: 'Delivery', ppt: 'PPT' };
+        function rubric(r, k, d) {
+            const set = (p, v, t, cur) => btn('set', p + '|' + v, t, cur == v ? 'on' : '', d);
+            const tg = (p, l) => btnSmall('tog', p, l, getp(r, p) ? 'on' : '', d);
+            return `
+                <h2>Creative and Unique Ideas (${k.S.creative})</h2>
+                <div class="m">4 beyond the slides, no notes · 3 stays close to slides · 2 missing details</div>
+                <div class="row mt-8">${[4, 3, 2].map(x => set('creative', x, x, r.creative)).join('')}</div>
+                <h2>Cohesion and Coherence (${k.S.cohesion})</h2>
+                <div class="m">4 flows smoothly · 3 some ideas don't connect · 2 ideas jump around</div>
+                <div class="row mt-8">${[4, 3, 2].map(x => set('cohesion', x, x, r.cohesion)).join('')}</div>
+                <h2>Delivery (${k.S.delivery})</h2>
+                <div class="row mt-8">${Object.entries(GL).map(([p, l]) => tg('delivery.' + p, l)).join('')}</div>
+                <h2>PPT (${k.S.ppt})</h2>
+                <div class="row">${Object.entries(PL).map(([p, l]) => tg('ppt.' + p, l)).join('')}</div>
+            `
+        }
+        function summ(r, k) {
+            const ms = (o, L) => Object.keys(L).filter(p => !o[p]).map(p => L[p].toLowerCase()), hi = [], lo = [], ts = [...new Set(r.errors.map(e => e.type))];
+            for (const n in CN) { const v = k.S[n], x = n == 'delivery' ? ms(r.delivery, GL) : n == 'ppt' ? ms(r.ppt, PL) : n == 'grammar' ? ts : []; (v >= 4 ? hi : lo).push(`${CN[n]} ${v}` + (v < 4 && x.length ? ' (' + (n == 'grammar' ? '' : 'missed: ') + x.join(', ') + ')' : '')) }
+            if (r.read80) lo.push('Read 80%+ from notes/script'); return { hi: hi.join('; '), lo: lo.join('; ') }
+        }
+        function vLive() {
+            const c = C(), i = c.roster.findIndex(r => r.id == P.id), s = c.roster[i]; if (!s) return '<div class="card">Student not found.</div>';
+            const r = rec(), k = calc(r, c, P.asm), as = c.settings.assignedSec[P.asm] || 210, lk = r.status == 'confirmed' ? 'disabled' : '', cnt = t => r.errors.filter(e => e.type == t).length, last = r.errors.at(-1);
+            const chips = g => c.settings.chips[g].map(t => `<button data-a="chip" class="chip" data-v="${esc(t)}" ${lk}>${esc(t)}${cnt(t) ? ' ×' + cnt(t) : ''}</button>`).join('');
+            return `
+            <b>${esc(s.name)}</b> 
+            <span class="m">${s.id} · ${i + 1}/${c.roster.length}</span>
+            <div class="card" style="margin-top:10px">
+                <div class="row" style="justify-content:space-between;align-items:center;">
+                    <div class="g">
+                        <div class="t" id="tm">0:00</div>
+                    </div>
+                    <div style="display:flex;flex-direction:row;gap:12px;min-width:104px;">
+                        ${r.startedAt ? btn('stop', '', 'Stop', 'd') : btn('start', '', 'Start', 'p', lk)}
+                        ${btn('rst', '', 'Reset', '', lk || r.startedAt ? 'disabled' : '')}
+                    </div>
+                </div>
+            </div>
+            <h2>Phone & Reading</h2>
+            <div class="row">
+                ${btnSmall('tog', 'phone', 'Used phone', r.phone ? 'on' : '', lk)}
+                ${btnSmall('tog', 'read80', 'Reading 80%+', r.read80 ? 'on' : '', lk)}
+            </div>
+            <h2>Grammar</h2>
+            <div class="row">${chips('grammar')}</div>
+            <h2>Pronunciation</h2>
+            <div class="row">${chips('pron')}</div>
+            <div class="row" style="margin-top:10px">
+                <span class="g m">${r.errors.length} logged · ${new Set(r.errors.map(e => e.type)).size} types</span>
+                ${btnSmall('mean', '', 'Meaning lost', last?.meaning ? 'on' : '', lk || !last ? 'disabled' : '')}
+                ${btnSmall('undo', '', 'Undo', '', lk || !last ? 'disabled' : '')}
+            </div>
+            ${rubric(r, k, lk)}
+            <div class="row" style="margin-top:14px">
+                ${btn('go', B() + (i ? '/st/' + c.roster[i - 1].id : ''), '‹ Prev', '', i ? '' : 'disabled')}
+                ${btn('go', B() + '/st/' + s.id + '/review', 'Review', 'p g')}
+                ${btn('go', B() + (i < c.roster.length - 1 ? '/st/' + c.roster[i + 1].id : ''), 'Next ›', '', i < c.roster.length - 1 ? '' : 'disabled')}
+            </div>`
+        }
+        function vReview() {
+            const c = C(), s = c.roster.find(r => r.id == P.id); if (!s) return '<div class="card">Student not found.</div>';
+            const r = rec(), k = calc(r, c, P.asm), lock = r.status == 'confirmed', d = lock ? 'disabled' : '', sm = summ(r, k);
+            const set = (p, v, t, cur) => btn('set', p + '|' + v, t, cur == v ? 'on' : '', d), tg = (p, l) => btn('tog', p, l, getp(r, p) ? 'on' : '', d);
+            const pen = (p, vals, l) => `<div class="row" style="margin-bottom:8px"><span class="g">${l}</span>${vals.map(v => set(p, v, v, r[p])).join('')}</div>`;
+            const types = [...new Set(r.errors.map(e => e.type))];
+            return `<div class="card"><b>${esc(s.name)}</b> <span class="m">${s.id} · ${r.status}${r.read80 ? ' · reading cap applied' : ''}</span></div>
+                ${rubric(r, k, d)}
+                <h2>Pronunciation and grammar</h2><div class="card"><div class="m">${k.types} distinct error types → ${k.types <= 3 ? 4 : k.types <= 6 ? 3 : 2}</div>${types.map(t => `<div><div class="m" style="margin-top:8px">${esc(t)} ×${r.errors.filter(e => e.type == t).length}${r.errors.some(e => e.type == t && e.meaning) ? ' · meaning lost' : ''}</div><input data-p="examples.${esc(t)}" value="${esc(r.examples[t] || '')}" placeholder="Example (optional)" ${d}></div>`).join('')}<div class="row"><span class="g">Override</span>${[null, 4, 3, 2].map(x => set('grammarOverride', x, x ?? 'Auto', r.grammarOverride)).join('')}</div></div>
+                <h2>Time and penalties</h2><div class="card"><div class="row"><span class="g">Time (seconds)</span><input type="number" style="width:110px" data-p="sec" value="${Math.round(el(r))}" ${d}></div>
+                ${pen('latePresent', [0, 1, 2], 'Late presentation (points)')}${pen('pptLateDays', [0, 1, 2, 3], 'Late PPT (days)')}${pen('revisions', [0, 1, 2, 3], 'Revisions (first is free)')}<div class="row">${tg('notesOnlyRev', 'Notes-only revision')}${tg('noAttn', 'No attention to time')}</div></div>
+                <h2>Notes</h2><textarea rows="3" placeholder="Explain any lower scores" data-p="note" ${d}>${esc(r.note)}</textarea>
+                <div class="card"><div class="m">Creative ${k.S.creative} · Cohesion ${k.S.cohesion} · Grammar ${k.S.grammar} · Delivery ${k.S.delivery} · PPT ${k.S.ppt} · Penalties −${k.pen}${k.len ? ' (time −' + k.len + ')' : ''}</div><b style="font-size:28px">${k.total} / 20</b>
+                <div class="m" style="margin-top:6px">Higher: ${esc(sm.hi) || 'none'}<br>Lower: ${esc(sm.lo) || 'none'}</div></div>
+                <div class="row">${btn('go', B() + '/st/' + P.id, '‹ Live')}${lock ? btn('edit', '', 'Edit', 'p g') : btn('confirm', '', 'Confirm', 'p g')}${r.prev && !lock ? btn('revert', '', 'Revert') : ''}</div>`
+        }
+        function vSettings() {
+            const c = C(), g = c.settings, inp = (s, l, v, t = 'text') => `<label class="m">${l}</label><input type="${t}" data-s="${esc(s)}" value="${esc(v)}">`;
+            return `<h2>${esc(P.cls)} settings</h2><div class="card">${inp('assessments', 'Assessments (comma separated)', g.assessments.join(', '))}${g.assessments.map(a => inp('as:' + a, 'Assigned seconds for ' + a + ' (window ±60 s)', g.assignedSec[a] || 210, 'number')).join('')}
+ <label class="m">Grammar chips (comma separated)</label><textarea rows="3" data-s="chips.grammar">${esc(g.chips.grammar.join(', '))}</textarea><label class="m">Pronunciation chips</label><textarea rows="2" data-s="chips.pron">${esc(g.chips.pron.join(', '))}</textarea></div>
+ <h2>Import roster (id,name,korean per line; merges by id)</h2><textarea rows="6" id="imp" placeholder="80120,Sean,정성원"></textarea>${btn('imp', '', 'Import', 'p')}<h2>Roster: ${c.roster.length} students</h2>${btn('delCls', '', 'Delete class', 'd')}`
+        }
+        function vBackup() { return `<h2>Backup</h2><div class="card">${btn('bk', '', 'Export full backup (JSON)', 'p')}<div class="m" style="margin-top:8px">Share it to Files or AirDrop. Safari can clear site data, so back up regularly.</div></div><h2>Restore</h2><div class="card"><input type="file" id="rf" accept=".json,application/json"><div class="m">You can choose to replace everything or merge missing items.</div></div>` }
+        function crumbs() { const a = [['Home', '']]; if (P.sem) a.push([S()?.label || '?', H('s', P.sem)]); if (P.cls) a.push([P.cls, B()]); if (P.id) a.push([C()?.roster.find(r => r.id == P.id)?.name || P.id, B() + '/st/' + P.id]); return a }
+        const parent = () => ({ home: null, backup: '', classes: '', roster: H('s', P.sem), settings: B(), live: B(), review: B() + '/st/' + P.id })[P.view];
+        function tick() { const e = $('#tm'); if (!e) return; const r = rec(), t = el(r), as = C().settings.assignedSec[P.asm] || 210; e.textContent = SEC(t); e.className = 't ' + (t > as + 60 ? 'warn' : t >= as - 60 ? 'ok' : '') }
+        setInterval(() => { if (P.view == 'live') tick() }, 250);
+        
+        function render() {
+            parse(); if (P.sem && !S() || P.cls && !C()) { location.hash = ''; return }
+            const pr = parent(), theme = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            $('#hd').innerHTML = (pr != null ? btn('go', pr, '‹') : '') + `<div class="cr">${P.view == 'home' ? '<b>Speaking Tracker</b>' : crumbs().map(([l, r]) => `<span data-a="go" data-v="${esc(r)}">${esc(l)}</span>`).join(' › ')}</div>` + btn('theme', '', theme == 'dark' ? '🌞' : '🌚');
+            $('#app').innerHTML = ({ home: vHome, classes: vClasses, roster: vRoster, settings: vSettings, live: vLive, review: vReview, backup: vBackup })[P.view](); DB.lastRoute = location.hash.slice(1); save(); tick()
+        }
+
+        function mut(f) { const r = rec(); if (r.status == 'confirmed') return; f(r); if (r.status == 'pending') r.status = 'draft'; save(); render() }
+        const COLS = 'semester,class,assessment,student_id,name,status,seconds,used_phone,read_80pct,creative,cohesion,grammar,delivery,ppt,grammar_types,grammar_examples,penalty_total,total,higher_scoring,lower_scoring,notes,confirmed_at'.split(',');
+        
+        const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v };
+        function rows(sem, cls, asm) {
+            const s = DB.semesters[sem], c = s.classes[cls]; return c.roster.map(st => {
+                const r = c.records[asm]?.[st.id]; let o = [s.label, cls, asm, st.id, st.name, r?.status || 'pending'];
+                if (r?.status == 'confirmed') { const k = calc(r, c, asm), ts = [...new Set(r.errors.map(e => e.type))], sm = summ(r, k); o.push(Math.round(r.sec), +r.phone, +r.read80, k.S.creative, k.S.cohesion, k.S.grammar, k.S.delivery, k.S.ppt, ts.join('; '), ts.filter(t => r.examples[t]).map(t => t + ': ' + r.examples[t]).join(' | '), k.pen, k.total, sm.hi, sm.lo, r.note, new Date(r.confirmedAt).toISOString()) }
+                while (o.length < COLS.length) o.push(''); return o.map(q).join(',')
+            })
+        }
+        const csvAll = l => [COLS.join(','), ...l].join('\n');
+        function out(n, t, m) { const f = new File([t], n, { type: m }); if (navigator.canShare?.({ files: [f] })) navigator.share({ files: [f] }).catch(() => { }); else { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = n; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5e3) } }
+        const mm = (d, s) => { for (const k in s) { if (!(k in d)) d[k] = s[k]; else if (d[k] && s[k] && typeof d[k] == 'object' && typeof s[k] == 'object' && !Array.isArray(d[k])) mm(d[k], s[k]) } };
+        document.addEventListener('click', e => {
+            const t = e.target.closest('[data-a]'); if (!t || t.disabled) return; const a = t.dataset.a, v = t.dataset.v;
+            switch (a) {
+                case 'go': location.hash = v; break;
+                case 'theme': {
+                    const current = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                    const next = current == 'dark' ? 'light' : 'dark';
+                    document.documentElement.dataset.theme = next;
+                    try { localStorage.setItem('speakingTracker.theme', next) } catch (e) { }
+                    render();
+                    break;
+                }
+                case 'newSem': { const l = prompt('Semester name (for example Fall 2026)'); if (!l) break; const k = slug(l); if (DB.semesters[k]) { alert('That semester already exists.'); break } DB.semesters[k] = { label: l.trim(), classes: {} }; save(); location.hash = H('s', k); break }
+                case 'renSem': { const l = prompt('New name', S().label); if (l) { S().label = l.trim(); save(); render() } break }
+                case 'delSem': if (confirm('Delete this semester and all its records?')) { delete DB.semesters[P.sem]; save(); location.hash = '' } break;
+                case 'newCls': { const l = prompt('Class name (for example 8C2)'); if (!l) break; const k = slug(l); if (S().classes[k]) { alert('That class already exists.'); break } S().classes[k] = { roster: [], settings: newCfg(), records: {} }; save(); location.hash = H('s', P.sem, 'c', k, 'S1') + '/settings'; break }
+                case 'delCls': if (confirm('Delete this class and all its records?')) { delete S().classes[P.cls]; save(); location.hash = H('s', P.sem) } break;
+                case 'imp': { const c = C(); $('#imp').value.split('\n').forEach(l => { const x = l.split(',').map(y => y.trim()), id = +x[0]; if (!id) return; const o = c.roster.find(r => r.id == id); if (o) { o.name = x[1] || o.name; o.korean = x[2] || o.korean } else c.roster.push({ id, name: x[1] || String(id), korean: x[2] || '' }) }); c.roster.sort((a, b) => a.id - b.id); save(); render(); break }
+                case 'start': mut(r => { const n = DB.running, o = n && DB.semesters[n.sem]?.classes[n.cls]?.records[n.asm]?.[n.id]; if (o && o !== r) stopRec(o); r.startedAt = Date.now(); DB.running = { sem: P.sem, cls: P.cls, asm: P.asm, id: P.id }; wl(true) }); break;
+                case 'stop': mut(r => { stopRec(r); DB.running = null; wl(false) }); break;
+                case 'rst': if (confirm('Reset timer to 0:00?')) mut(r => { r.sec = 0 }); break;
+                case 'tog': mut(r => setp(r, v, !getp(r, v))); break;
+                case 'set': { const [p, x] = v.split('|'); mut(r => setp(r, p, x == 'null' ? null : +x)); break }
+                case 'chip': mut(r => r.errors.push({ type: v, t: Math.round(el(r)), meaning: false })); break;
+                case 'undo': mut(r => r.errors.pop()); break;
+                case 'mean': mut(r => { const x = r.errors.at(-1); if (x) x.meaning = !x.meaning }); break;
+                case 'confirm': { const r = rec(), c = C(); r.status = 'confirmed'; r.confirmedAt = Date.now(); r.prev = null; stopRec(r); if (DB.running?.id == P.id) DB.running = null; save(); const n = nextOf(c, P.asm); location.hash = n ? B() + '/st/' + n.id : B(); break }
+                case 'edit': { const r = rec(); r.prev = JSON.stringify({ ...r, prev: null }); r.status = 'draft'; r.editedAt = Date.now(); save(); render(); break }
+                case 'revert': { const r = rec(), p = JSON.parse(r.prev); Object.keys(r).forEach(k => delete r[k]); Object.assign(r, p); save(); render(); break }
+                case 'csv': out(`${P.cls}-${P.asm}.csv`, csvAll(rows(P.sem, P.cls, P.asm)), 'text/csv'); break;
+                case 'csvCopy': navigator.clipboard?.writeText(csvAll(rows(P.sem, P.cls, P.asm))).then(() => alert('CSV copied'), () => alert('Copy failed')); break;
+                case 'csvSem': { const l = []; for (const k in S().classes) S().classes[k].settings.assessments.forEach(x => l.push(...rows(P.sem, k, x))); out(`${P.sem}-all.csv`, csvAll(l), 'text/csv'); break }
+                case 'bk': DB.backupAt = Date.now(); save(); out(`speaking-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(DB), 'application/json'); break;
+            }
+        });
+        document.addEventListener('input', e => { const t = e.target; if (!t.dataset.p || t.disabled) return; const r = rec(); setp(r, t.dataset.p, t.type == 'number' ? +t.value : t.value); if (r.status == 'pending') r.status = 'draft'; save() });
+        document.addEventListener('change', e => {
+            const t = e.target; if (t.id == 'rf') { const f = t.files[0]; if (!f) return; f.text().then(x => { try { const o = JSON.parse(x); if (!o.semesters) throw 0; if (confirm('Replace everything with this backup?\nCancel = merge missing items only.')) DB = o; else mm(DB, o); save(); location.hash = ''; render() } catch (_) { alert('Not a valid backup file.') } }); return }
+            const s = t.dataset.s; if (!s) return; const g = C().settings;
+            if (s == 'assessments') { const l = t.value.split(',').map(x => x.trim()).filter(Boolean); g.assessments = l.length ? l : ['S1']; g.assessments.forEach(a => g.assignedSec[a] ??= 210) }
+            else if (s.startsWith('as:')) g.assignedSec[s.slice(3)] = +t.value || 210;
+
+            else g.chips[s.split('.')[1]] = t.value.split(',').map(x => x.replace(/\./g, '').trim()).filter(Boolean);
+            save(); render()
+        });
+        addEventListener('hashchange', () => { render(); scrollTo(0, 0) });
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
+        if (!location.hash && DB.lastRoute) location.hash = DB.lastRoute; else render();
+    </script>
+</body>
+
+</html>
