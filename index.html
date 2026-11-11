@@ -99,7 +99,24 @@
             padding: 12px;
             max-width: 640px;
             margin: auto;
-            padding-bottom: 80px
+            padding-bottom: 120px
+        }
+
+        .student-nav {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 4;
+            background: var(--card);
+            border-top: 1px solid var(--line);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .student-nav .row {
+            max-width: 640px;
+            margin: auto;
+            padding: 8px 12px;
         }
 
         button,
@@ -111,7 +128,7 @@
         }
 
         button {
-            min-height: 48px;
+            min-height: 40px;
             padding: 0 14px;
             border-radius: 4px;
             border: 1px solid var(--line);
@@ -122,7 +139,16 @@
         button.small {
             min-height: 32px;
             padding: 0 8px;
-            font-size: 13px
+            font-size: 13px;
+            border-radius: 2px;
+        }
+
+        button.equal {
+            flex: 1;
+            font-size: 13px;
+            min-height: 32px;
+            border-radius: 2px;
+            white-space: nowrap;
         }
 
         button.p,
@@ -158,7 +184,7 @@
         }
 
         .row>* {
-            flex: 0 0 auto
+            flex: 0 0 auto;
         }
 
         .mt-8 {
@@ -229,7 +255,7 @@
 
         .m {
             color: var(--mut);
-            font-size: 13px
+            font-size: 12px
         }
 
         .chip {
@@ -240,6 +266,10 @@
             border: 1px solid var(--line);
             background: var(--card);
             cursor: pointer;
+        }
+
+        .chip.selected {
+            border-color: var(--acc);
         }
     </style>
     <script>
@@ -285,13 +315,14 @@
         }
         const btn = (a, v, t, cl = '', x = '') => `<button class="${cl}" data-a="${a}" data-v="${esc(v)}" ${x}>${t}</button>`;
         const btnSmall = (a, v, t, cl = '', x = '') => `<button class="${cl} small" data-a="${a}" data-v="${esc(v)}" ${x}>${t}</button>`;
+        const btnFlex = (a, v, t, cl = '', x = '') => `<button class="${cl} equal" data-a="${a}" data-v="${esc(v)}" ${x}>${t}</button>`;
         const prog = (c, a) => `${c.roster.filter(r => c.records[a]?.[r.id]?.status == 'confirmed').length}/${c.roster.length}`;
         const nextOf = (c, asm) => c.roster.find(x => !c.records[asm]?.[x.id]?.confirmedAt);
         function vHome() {
             const ks = Object.keys(DB.semesters).reverse(), age = DB.backupAt ? Math.floor((Date.now() - DB.backupAt) / 864e5) + ' days ago' : 'never';
-            return `<h2>Semesters</h2>` + ks.map(k => `<button class="li" data-a="go" data-v="${esc(H('s', k))}"><b class="g">${esc(DB.semesters[k].label)}</b><span class="m">${Object.keys(DB.semesters[k].classes).length} classes ›</span></button>`).join('') + btn('newSem', 'newSem', '+ New semester', 'p') + `<h2>Backup</h2><div class="card"><div class="m" style="margin-bottom:8px">Last backup: ${age}</div>${btn('go', H('backup'), 'Backup and restore')}</div>`
+            return `<h2>Semesters</h2>` + ks.map(k => `<button class="li" data-a="go" data-v="${esc(H('s', k))}"><b class="g">${esc(DB.semesters[k].label)}</b><span class="m">${Object.keys(DB.semesters[k].classes).length} classes ›</span></button>`).join('') + btn('newSem', 'newSem', '+ New semester', 'p', 'style="width:100%"') + `<h2>Backup</h2><div class="card"><div class="m" style="margin-bottom:8px">Last backup: ${age}</div>${btn('go', H('backup'), 'Backup and restore')}</div>`
         }
-        function vClasses() { const s = S(); return `<h2>${esc(s.label)}</h2>` + Object.keys(s.classes).map(k => { const c = s.classes[k], a = c.settings.assessments; return `<button class="li" data-a="go" data-v="${esc(H('s', P.sem, 'c', k, a[0]))}"><span class="g"><b>${esc(k)}</b><br><span class="m">${a.map(x => x + ' ' + prog(c, x)).join(' · ')}</span></span>›</button>` }).join('') + btn('newCls', 'newClass', '+ New class', 'p') + `<div class="row" style="margin-top:12px">${btn('csvSem', '', 'Export all CSV')}${btn('renSem', '', 'Rename')}${btn('delSem', '', 'Delete', 'd')}</div>` }
+        function vClasses() { const s = S(); return `<h2>${esc(s.label)}</h2>` + Object.keys(s.classes).map(k => { const c = s.classes[k], a = c.settings.assessments; return `<button class="li" data-a="go" data-v="${esc(H('s', P.sem, 'c', k, a[0]))}"><span class="g"><b>${esc(k)}</b><br><span class="m">${a.map(x => x + ' ' + prog(c, x)).join(' · ')}</span></span>›</button>` }).join('') + btn('newCls', 'newClass', '+ New class', 'p', 'style="width:100%"') + `<div class="row" style="margin-top:12px">${btn('csvSem', '', 'Export all CSV')}${btn('renSem', '', 'Rename')}${btn('delSem', '', 'Delete', 'd')}</div>` }
         function vRoster() {
             const c = C(), rs = c.records[P.asm] || {}, nx = nextOf(c, P.asm);
             return `<div class="row" style="margin-bottom:10px">${c.settings.assessments.map(x => btn('go', H('s', P.sem, 'c', P.cls, x), x, x == P.asm ? 'on' : '')).join('')}${btn('go', B() + '/settings', 'Settings')}</div>` +
@@ -299,9 +330,9 @@
                 c.roster.map(r => { const x = rs[r.id], st = x?.status || 'pending'; return `<button class="li" data-a="go" data-v="${esc(B() + '/st/' + r.id)}"><i class="dot ${st}"></i><span class="g">${r.id} ${esc(r.name)}</span><span class="m">${x && x.sec ? SEC(x.sec) : ''}${st == 'confirmed' ? ' · ' + calc(x, c, P.asm).total + '/20' : ''}</span></button>` }).join('') +
                 `<div class="row" style="margin-top:12px">${btn('csv', '', 'Export CSV')}${btn('csvCopy', '', 'Copy CSV')}</div>`
         }
-        const GL = { fluency: 'Fluency', tone: 'Tone', gestures: 'Gestures', eye: 'Eye contact', stance: 'Stance' }, PL = { readable: 'Readable', text: 'Restrained text', visuals: 'Useful visuals', purpose: 'Clear purpose' }, CN = { creative: 'Creative ideas', cohesion: 'Cohesion', grammar: 'Grammar and pronunciation', delivery: 'Delivery', ppt: 'PPT' };
+        const GL = { fluency: 'Fluency', tone: 'Tone', gestures: 'Gestures', eye: 'Eye contact', stance: 'Stance' }, PL = { readable: 'Readable', text: 'Restrained Text', visuals: 'Useful Visuals', purpose: 'Clear Purpose' }, CN = { creative: 'Creative ideas', cohesion: 'Cohesion', grammar: 'Grammar and pronunciation', delivery: 'Delivery', ppt: 'PPT' };
         function rubric(r, k, d) {
-            const set = (p, v, t, cur) => btn('set', p + '|' + v, t, cur == v ? 'on' : '', d);
+            const set = (p, v, t, cur) => btnFlex('set', p + '|' + v, t, cur == v ? 'on' : '', d);
             const tg = (p, l) => btnSmall('tog', p, l, getp(r, p) ? 'on' : '', d);
             return `
                 <h2>Creative and Unique Ideas (${k.S.creative})</h2>
@@ -309,7 +340,9 @@
                 <div class="row mt-8">${[4, 3, 2].map(x => set('creative', x, x, r.creative)).join('')}</div>
                 <h2>Cohesion and Coherence (${k.S.cohesion})</h2>
                 <div class="m">4 flows smoothly · 3 some ideas don't connect · 2 ideas jump around</div>
-                <div class="row mt-8">${[4, 3, 2].map(x => set('cohesion', x, x, r.cohesion)).join('')}</div>
+                <div class="row mt-8">
+                    ${[4, 3, 2].map(x => set('cohesion', x, x, r.cohesion)).join('')}
+                </div>
                 <h2>Delivery (${k.S.delivery})</h2>
                 <div class="row mt-8">${Object.entries(GL).map(([p, l]) => tg('delivery.' + p, l)).join('')}</div>
                 <h2>PPT (${k.S.ppt})</h2>
@@ -324,7 +357,7 @@
         function vLive() {
             const c = C(), i = c.roster.findIndex(r => r.id == P.id), s = c.roster[i]; if (!s) return '<div class="card">Student not found.</div>';
             const r = rec(), k = calc(r, c, P.asm), as = c.settings.assignedSec[P.asm] || 210, lk = r.status == 'confirmed' ? 'disabled' : '', cnt = t => r.errors.filter(e => e.type == t).length, last = r.errors.at(-1);
-            const chips = g => c.settings.chips[g].map(t => `<button data-a="chip" class="chip" data-v="${esc(t)}" ${lk}>${esc(t)}${cnt(t) ? ' ×' + cnt(t) : ''}</button>`).join('');
+            const chips = g => c.settings.chips[g].map(t => { const count = cnt(t); return `<button data-a="chip" class="chip${count ? ' selected' : ''}" data-v="${esc(t)}" ${lk}>${esc(t)}${count ? ' ×' + count : ''}</button>` }).join('');
             return `
             <b>${esc(s.name)}</b> 
             <span class="m">${s.id} · ${i + 1}/${c.roster.length}</span>
@@ -341,8 +374,8 @@
             </div>
             <h2>Phone & Reading</h2>
             <div class="row">
-                ${btnSmall('tog', 'phone', 'Used phone', r.phone ? 'on' : '', lk)}
-                ${btnSmall('tog', 'read80', 'Reading 80%+', r.read80 ? 'on' : '', lk)}
+                ${btnFlex('tog', 'phone', 'Used phone', r.phone ? 'on' : '', lk)}
+                ${btnFlex('tog', 'read80', 'Reading 80%+', r.read80 ? 'on' : '', lk)}
             </div>
             <h2>Grammar</h2>
             <div class="row">${chips('grammar')}</div>
@@ -354,11 +387,11 @@
                 ${btnSmall('undo', '', 'Undo', '', lk || !last ? 'disabled' : '')}
             </div>
             ${rubric(r, k, lk)}
-            <div class="row" style="margin-top:14px">
+            <div class="student-nav"><div class="row">
                 ${btn('go', B() + (i ? '/st/' + c.roster[i - 1].id : ''), '‹ Prev', '', i ? '' : 'disabled')}
                 ${btn('go', B() + '/st/' + s.id + '/review', 'Review', 'p g')}
                 ${btn('go', B() + (i < c.roster.length - 1 ? '/st/' + c.roster[i + 1].id : ''), 'Next ›', '', i < c.roster.length - 1 ? '' : 'disabled')}
-            </div>`
+            </div></div>`
         }
         function vReview() {
             const c = C(), s = c.roster.find(r => r.id == P.id); if (!s) return '<div class="card">Student not found.</div>';
@@ -366,15 +399,40 @@
             const set = (p, v, t, cur) => btn('set', p + '|' + v, t, cur == v ? 'on' : '', d), tg = (p, l) => btn('tog', p, l, getp(r, p) ? 'on' : '', d);
             const pen = (p, vals, l) => `<div class="row" style="margin-bottom:8px"><span class="g">${l}</span>${vals.map(v => set(p, v, v, r[p])).join('')}</div>`;
             const types = [...new Set(r.errors.map(e => e.type))];
-            return `<div class="card"><b>${esc(s.name)}</b> <span class="m">${s.id} · ${r.status}${r.read80 ? ' · reading cap applied' : ''}</span></div>
+            return `<div class="card">
+                <b>${esc(s.name)}</b> 
+                <span class="m">${s.id} · ${r.status}${r.read80 ? ' · reading cap applied' : ''}</span>
+                </div>
                 ${rubric(r, k, d)}
-                <h2>Pronunciation and grammar</h2><div class="card"><div class="m">${k.types} distinct error types → ${k.types <= 3 ? 4 : k.types <= 6 ? 3 : 2}</div>${types.map(t => `<div><div class="m" style="margin-top:8px">${esc(t)} ×${r.errors.filter(e => e.type == t).length}${r.errors.some(e => e.type == t && e.meaning) ? ' · meaning lost' : ''}</div><input data-p="examples.${esc(t)}" value="${esc(r.examples[t] || '')}" placeholder="Example (optional)" ${d}></div>`).join('')}<div class="row"><span class="g">Override</span>${[null, 4, 3, 2].map(x => set('grammarOverride', x, x ?? 'Auto', r.grammarOverride)).join('')}</div></div>
-                <h2>Time and penalties</h2><div class="card"><div class="row"><span class="g">Time (seconds)</span><input type="number" style="width:110px" data-p="sec" value="${Math.round(el(r))}" ${d}></div>
-                ${pen('latePresent', [0, 1, 2], 'Late presentation (points)')}${pen('pptLateDays', [0, 1, 2, 3], 'Late PPT (days)')}${pen('revisions', [0, 1, 2, 3], 'Revisions (first is free)')}<div class="row">${tg('notesOnlyRev', 'Notes-only revision')}${tg('noAttn', 'No attention to time')}</div></div>
-                <h2>Notes</h2><textarea rows="3" placeholder="Explain any lower scores" data-p="note" ${d}>${esc(r.note)}</textarea>
-                <div class="card"><div class="m">Creative ${k.S.creative} · Cohesion ${k.S.cohesion} · Grammar ${k.S.grammar} · Delivery ${k.S.delivery} · PPT ${k.S.ppt} · Penalties −${k.pen}${k.len ? ' (time −' + k.len + ')' : ''}</div><b style="font-size:28px">${k.total} / 20</b>
-                <div class="m" style="margin-top:6px">Higher: ${esc(sm.hi) || 'none'}<br>Lower: ${esc(sm.lo) || 'none'}</div></div>
-                <div class="row">${btn('go', B() + '/st/' + P.id, '‹ Live')}${lock ? btn('edit', '', 'Edit', 'p g') : btn('confirm', '', 'Confirm', 'p g')}${r.prev && !lock ? btn('revert', '', 'Revert') : ''}</div>`
+                <h2>Pronunciation and grammar</h2>
+                <div class="card">
+                    <div class="m">
+                        ${k.types} distinct error types → ${k.types <= 3 ? 4 : k.types <= 6 ? 3 : 2}
+                    </div>
+                    ${types.map(t => `<div><div class="m" style="margin-top:8px">${esc(t)} ×${r.errors.filter(e => e.type == t).length}${r.errors.some(e => e.type == t && e.meaning) ? ' · meaning lost' : ''}</div><input data-p="examples.${esc(t)}" value="${esc(r.examples[t] || '')}" placeholder="Example (optional)" ${d}></div>`).join('')}<div class="row"><span class="g">Override</span>${[null, 4, 3, 2].map(x => set('grammarOverride', x, x ?? 'Auto', r.grammarOverride)).join('')}</div></div>
+                <h2>Time and penalties</h2>
+                <div class="card">
+                    <div class="row" style="margin-bottom:10px">
+                        <span class="g">Time (seconds)</span>
+                        <input type="number" style="width:110px" data-p="sec" value="${Math.round(el(r))}" ${d}/>
+                    </div>
+                    ${pen('latePresent', [0, 1, 2], 'Late presentation (points)')}${pen('pptLateDays', [0, 1, 2, 3], 'Late PPT (days)')}${pen('revisions', [0, 1, 2, 3], 'Revisions')}<div class="row" style="margin-top: 16px">${btnFlex('tog', 'notesOnlyRev', 'Notes-only revision', r.notesOnlyRev ? 'on' : '', d)}${btnFlex('tog', 'noAttn', 'No attention to time', r.noAttn ? 'on' : '', d)}</div></div>
+                <h2>Notes</h2>
+                <textarea rows="3" placeholder="Explain any lower scores" data-p="note" ${d}>${esc(r.note)}</textarea>
+                
+                <div class="card">
+                    <div class="m">
+                        Creative ${k.S.creative} · Cohesion ${k.S.cohesion} · Grammar ${k.S.grammar} · Delivery ${k.S.delivery} · PPT ${k.S.ppt} · Penalties −${k.pen}${k.len ? ' (time −' + k.len + ')' : ''}
+                    </div>
+                    <b style="font-size:28px">${k.total} / 20</b>
+                    <div class="m" style="margin-top:6px">
+                        Higher: ${esc(sm.hi) || 'none'}<br>Lower: ${esc(sm.lo) || 'none'}
+                    </div>
+                </div>
+                <div class="row">
+                    ${btn('go', B() + '/st/' + P.id, '‹ Live')}${lock ? btn('edit', '', 'Edit', 'p g') : btn('confirm', '', 'Confirm', 'p g')}${r.prev && !lock ? btn('revert', '', 'Revert') : ''}
+                </div>
+            `
         }
         function vSettings() {
             const c = C(), g = c.settings, inp = (s, l, v, t = 'text') => `<label class="m">${l}</label><input type="${t}" data-s="${esc(s)}" value="${esc(v)}">`;
