@@ -25,12 +25,12 @@
 
         @media(prefers-color-scheme:dark) {
             :root:not([data-theme]) {
-                --bg: #101310;
-                --fg: #e7eae6;
-                --card: #1a1f1a;
+                --bg: #010101;
+                --fg: #eee;
+                --card: #111;
                 --mut: #98a299;
-                --line: #2c342d;
-                --acc: #7da2ff;
+                --line: #333;
+                --acc: white;
                 --ok: #4cc38a;
                 --warn: #f0a840;
                 --bad: #ff7b6b;
@@ -448,7 +448,7 @@
         const parent = () => ({ home: null, backup: '', classes: '', roster: H('s', P.sem), settings: B(), live: B(), review: B() + '/st/' + P.id })[P.view];
         function tick() { const e = $('#tm'); if (!e) return; const r = rec(), t = el(r), as = C().settings.assignedSec[P.asm] || 210; e.textContent = SEC(t); e.className = 't ' + (t > as + 60 ? 'warn' : t >= as - 60 ? 'ok' : '') }
         setInterval(() => { if (P.view == 'live') tick() }, 250);
-        
+
         function render() {
             parse(); if (P.sem && !S() || P.cls && !C()) { location.hash = ''; return }
             const pr = parent(), theme = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -458,7 +458,7 @@
 
         function mut(f) { const r = rec(); if (r.status == 'confirmed') return; f(r); if (r.status == 'pending') r.status = 'draft'; save(); render() }
         const COLS = 'semester,class,assessment,student_id,name,status,seconds,used_phone,read_80pct,creative,cohesion,grammar,delivery,ppt,grammar_types,grammar_examples,penalty_total,total,higher_scoring,lower_scoring,notes,confirmed_at'.split(',');
-        
+
         const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v };
         function rows(sem, cls, asm) {
             const s = DB.semesters[sem], c = s.classes[cls]; return c.roster.map(st => {
