@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Rubric Print</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font: 14px/1.4 -apple-system, system-ui, Arial, sans-serif;
+            background: #eceeea;
+            color: #111
+        }
+
+        #bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 10px 14px;
+            background: #fff;
+            border-bottom: 1px solid #ccc;
+            position: sticky;
+            top: 0;
+            z-index: 2
+        }
+
+        button,
+        select {
+            font: inherit;
+            padding: 6px 12px;
+            border: 1px solid #bbb;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer
+        }
+
+        button.p {
+            background: #1d4ed8;
+            color: #fff;
+            border-color: #1d4ed8
+        }
+
+        #mn {
+            display: flex;
+            gap: 16px;
+            padding: 14px;
+            align-items: flex-start
+        }
+
+        #ls {
+            width: 250px;
+            flex: 0 0 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        #ls button {
+            text-align: left;
+            display: flex;
+            gap: 8px
+        }
+
+        #ls button.on {
+            border-color: #1d4ed8;
+            background: #e8eefc
+        }
+
+        #ls .dim {
+            opacity: .5
+        }
+
+        #ls .t {
+            margin-left: auto;
+            color: #666
+        }
+
+        #pv {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            overflow: auto
+        }
+
+        #pv .paper {
+            background: #fff;
+            padding: 8mm 10mm;
+            width: 210mm;
+            box-shadow: 0 1px 4px #0003
+        }
+
+        textarea {
+            width: 100%;
+            font: inherit;
+            padding: 8px;
+            border: 1px solid #bbb;
+            border-radius: 8px
+        }
+
+        #ov {
+            width: 210mm;
+        }
+
+        .m {
+            color: #666;
+            font-size: 13px
+        }
+
+        details {
+            margin-left: auto
+        }
+
+        #pa {
+            display: none
+        }
+
+        .sheet {
+            width: 190mm;
+            font: 7pt/1.15 Arial, Helvetica, sans-serif;
+            color: #000
+        }
+
+        .ttl {
+            text-align: center;
+            font-weight: 700;
+            font-size: 10pt;
+            margin: 0 0 1mm
+        }
+
+        .sheet table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed
+        }
+
+        .sheet td {
+            border: .6pt solid #666;
+            padding: .7mm 1.2mm;
+            vertical-align: top;
+            text-align: center
+        }
+
+        .sheet .sec td {
+            background: #e8e8e8;
+            text-align: left;
+            font-weight: 700;
+            font-size: 8pt
+        }
+
+        .sheet td.side,
+        .sheet td.ft {
+            text-align: left
+        }
+
+        .sheet td.ft {
+            text-align: center;
+            font-size: 6.5pt
+        }
+
+        .h {
+            display: block;
+            font-size: 8pt;
+            margin-bottom: .5mm
+        }
+
+        .sel {
+            display: inline-block;
+            border: 1.6pt solid #000;
+            border-radius: 50%;
+            padding: .2mm 3mm;
+            background: #ddd
+        }
+
+        .sheet ul {
+            margin: 0;
+            padding-left: 3.5mm;
+            text-align: left
+        }
+
+        .sheet s {
+            text-decoration-thickness: 1.3pt
+        }
+
+        .big {
+            font-size: 14pt;
+            font-weight: 700
+        }
+
+        .sm {
+            font-size: 7pt;
+            margin-top: 1mm
+        }
+
+        .nm {
+            display: grid;
+            grid-template-columns: 1fr 24mm;
+            gap: 0
+        }
+
+        .nm span {
+            font-size: 8pt
+        }
+
+        .bx {
+            display: grid;
+            grid-template-columns: 1fr 24mm;
+            border: .6pt solid #666;
+            min-height: 6mm;
+            margin-top: .5mm;
+            grid-column: 1/3
+        }
+
+        .bx b {
+            padding: 1mm;
+            font-size: 8pt
+        }
+
+        .bx b+b {
+            border-left: .6pt solid #666
+        }
+
+        @media print {
+            body {
+                background: #fff
+            }
+
+            #ui {
+                display: none !important
+            }
+
+            #pa {
+                display: block
+            }
+
+            .page {
+                width: 210mm;
+                height: 296mm;
+                overflow: hidden;
+                break-after: page
+            }
+
+            .page:last-child {
+                break-after: auto
+            }
+
+            .slot {
+                height: 148mm;
+                padding: 6mm 10mm 0;
+                overflow: hidden
+            }
+
+            .slot:first-child {
+                border-bottom: .5pt dashed #888
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        <div id="bar"><input type="file" id="f" accept=".csv" multiple><select id="ks"></select><button class="p" data-a="all">Print all</button><button
+                data-a="one">Print this student</button>
+            <details>
+                <summary>Phrases</summary><textarea id="pb" rows="14" style="width:420px"></textarea>
+                <div><button data-a="pbs">Save</button> <button data-a="pbr">Reset</button></div>
+            </details>
+        </div>
+        <div id="mn">
+            <aside id="ls"></aside>
+            <section id="pv">
+                <p class="m">Import one or more CSV exports from the tracker.</p>
+            </section>
+        </div>
+    </div>
+    <div id="pa"></div>
+    <script>
+        const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const PBD = {
+            perfect: ['Great job!', 'Excellent work!', 'Well done!'], praise: { creative: 'Great ideas and examples!', delivery: 'Confident, clear delivery!', cohesion: 'Clear and well organized.', ppt: 'Clear, helpful slides.', grammar: 'Very accurate English!' },
+            imp: { eye: 'More eye contact would be great.', fluency: 'A little more practice would help.', tone: 'A louder voice would be great.', gestures: 'More hand gestures would be great.', stance: 'Stand tall and face your audience.', grammar3: 'A few small grammar mistakes. Keep practicing!', grammar2: 'Check your grammar before you present.', meaning: 'Some sentences were hard to follow.', creative3: 'More examples would be great.', creative2: 'More details would really help.', cohesion3: 'Linking words would be great.', cohesion2: 'Try putting your ideas in a clear order.', ppt_text: 'Fewer words on slides would help.', ppt_readable: 'Make your text bigger and clearer.', ppt_visuals: 'Add pictures that help your point.', ppt_purpose: 'Give each slide one clear job.', read: 'Try not to read. You can do it!', phone: 'Try presenting without your phone.', short: 'Try to speak a little longer.', long: 'Try to stay closer to the time.' }
+        };
+        let PB; try { PB = JSON.parse(localStorage.getItem('rubricPrint.pb')) } catch (e) { } PB = PB || PBD;
+        let OV; try { OV = JSON.parse(localStorage.getItem('rubricPrint.ov')) } catch (e) { } OV = OV || {};
+        let ROWS = [], cur = '', sel = 0;
+        function parseCSV(t) { t = t.replace(/^\uFEFF/, ''); const R = []; let r = [], f = '', q = false; for (let i = 0; i < t.length; i++) { const c = t[i]; if (q) { if (c == '"') { if (t[i + 1] == '"') { f += '"'; i++ } else q = false } else f += c } else if (c == '"') q = true; else if (c == ',') { r.push(f); f = '' } else if (c == '\n' || c == '\r') { if (c == '\r' && t[i + 1] == '\n') i++; r.push(f); f = ''; R.push(r); r = [] } else f += c } if (f || r.length) { r.push(f); R.push(r) } const h = R.shift(); return R.filter(x => x.length > 1).map(x => Object.fromEntries(h.map((k, i) => [k.trim(), x[i] ?? '']))) }
+        const K = r => [r.semester, r.class, r.assessment].join(' · '), SEC = s => Math.floor(s / 60) + ':' + String(Math.round(s) % 60).padStart(2, '0'), sp = v => (v || '').split(';').map(x => x.trim()).filter(Boolean), okey = r => K(r) + '|' + r.student_id;
+        const grp = () => ROWS.filter(r => K(r) == cur);
+        function phrases(r, i) {
+            const n = k => +r[k] || 0, dm = sp(r.delivery_missed), pm = sp(r.ppt_missed), as = n('assigned_sec') || 210, sec = n('seconds'), I = PB.imp, imp = [];
+            if (r.read_80pct == '1') imp.push(I.read); if (r.used_phone == '1') imp.push(I.phone);
+            if (n('meaning_lost')) imp.push(I.meaning); else if (n('grammar') == 3) imp.push(I.grammar3); else if (n('grammar') == 2) imp.push(I.grammar2);
+            for (const k of ['eye', 'fluency', 'tone', 'gestures', 'stance']) if (dm.includes(k)) imp.push(I[k]);
+            if (n('creative') < 4) imp.push(I['creative' + n('creative')]); if (n('cohesion') < 4) imp.push(I['cohesion' + n('cohesion')]);
+            for (const k of ['text', 'readable', 'visuals', 'purpose']) if (pm.includes(k)) imp.push(I['ppt_' + k]);
+            if (sec && sec < as - 60) imp.push(I.short); if (sec > as + 60) imp.push(I.long);
+            if (!imp.length) return [PB.perfect[i % PB.perfect.length]];
+            const pr = ['creative', 'delivery', 'cohesion', 'ppt', 'grammar'].filter(k => n(k) == 4).map(k => PB.praise[k]);
+            return (pr.length ? [pr[0], imp[0]] : imp.slice(0, 2)).filter(Boolean)
+        }
+        const L3 = (a, b, c) => [[4, '4 (Excellent)', a], [3, '3 (Good)', b], [2, '2 (Lacking)', c]];
+        const CR = L3('Excellent level of description.<br>Shows creativity.', 'Good level of description.<br>All required information included.', 'Lacks some critical details that make<br>it difficult for the listener to understand.'),
+            CO = L3('Easily understood.<br>Structured. Flows well.', 'Easily understood.<br>Structured. Lacks a little flow.', 'Can be understood.<br>Some attempt at structure. Lacks flow.'),
+            GR = L3('1-3 errors<br>Accuracy and variety of grammatical structures. Easy to understand.', '4-6 errors<br>Errors in grammatical structures. Easy to understand.', '7&gt;errors<br>Some sentences not fully formed.<br>Meaning affected'),
+            DT = ['4 (Excellent) - All', '3 (Good) – Missing 1', '2 (Adequate) – Missing 2', '1 (Lacking) – Missing 3'],
+            DI = [['fluency', 'Fluency-minimal hesitation'], ['tone', 'Tone-good volume and intonation'], ['gestures', 'Gestures-body language complementary'], ['eye', 'Eye contact-varied'], ['stance', 'Stance-facing, no shuffling.']],
+            PP = [[4, '4 (Excellent)', 'Not too much text.<br>Text mostly visible. Good visuals.'], [3, '3 (Good)', 'Most slides clear.<br>Good visuals.'], [2, '2 (Adequate)', 'Some slides too much text.<br>Adequate visuals.'], [1, '1 (Lacking)', 'No attention given to presentation style.']];
+        function sheet(r, i) {
+            const n = k => +r[k] || 0, dm = sp(r.delivery_missed), ov = OV[okey(r)], ph = ov && ov.trim() ? ov.split('\n').filter(Boolean) : phrases(r, i);
+            const cell = (v, t, d, s) => `<td><b class="h"><span${v == s ? ' class="sel"' : ''}>${t}</span></b>${d}</td>`;
+            const three = (lab, L, s, side) => `<tr class="sec"><td colspan="4">${lab}</td></tr><tr>${L.map(([v, t, d]) => cell(v, t, d, s)).join('')}<td class="side">${side}</td></tr>`;
+            const pl = []; if (n('pen_time')) pl.push('Speech length −' + n('pen_time')); if (n('pen_late_presentation')) pl.push('Late presentation −' + n('pen_late_presentation')); if (n('pen_late_ppt')) pl.push('Late PPT −' + n('pen_late_ppt')); if (n('pen_revisions')) pl.push('Revisions −' + n('pen_revisions'));
+            if (r.read_80pct == '1') pl.push('Reading cap applied'); if (n('creative') + n('cohesion') + n('grammar') + n('delivery') + n('ppt') - n('penalty_total') < 8) pl.push('Minimum score 8 applied');
+            const dl = [4, 3, 2, 1].map((v, j) => `<td><b class="h"><span${v == n('delivery') ? ' class="sel"' : ''}>${DT[j]}</span></b><ul>${DI.map(([k, t]) => `<li>${v == n('delivery') && dm.includes(k) ? `<s>${t}</s>` : t}</li>`).join('')}</ul></td>`).join('');
+            return `<div class="sheet"><div class="ttl">Higher Level Speaking Rubric (Level C) – ${esc(r.assessment)}</div><table>
+ ${three('Creative &amp; Unique Ideas', CR, n('creative'), `<div class="nm"><span>Name:</span><span>Class:</span><div class="bx"><b>${esc(r.name)}</b><b>${esc(r.class)}</b></div></div>`)}
+ ${three('Cohesion &amp; Coherence (Structure)', CO, n('cohesion'), `Score: <span class="big">${n('total')}</span> / 20<div class="sm">Time ${SEC(n('seconds'))}${pl.length ? '<br>' + pl.join('<br>') : ''}</div>`)}
+ ${three('Pronunciation &amp; Grammar', GR, n('grammar'), 'Notes:' + ph.map(p => `<div style="margin-top:.6mm">${esc(p)}</div>`).join(''))}
+ <tr class="sec"><td colspan="4">Delivery</td></tr><tr>${dl}</tr><tr class="sec"><td colspan="4">PPT</td></tr><tr>${PP.map(([v, t, d]) => cell(v, t, d, n('ppt'))).join('')}</tr>
+ <tr><td colspan="4" class="ft">Min. Score = 8</td></tr><tr><td colspan="4" class="ft">Presentation: next class -1 / 2+ classes later&gt; -2<br>Speech Length: -1 point if above or below 1 min. / -2 points if no attention given to time</td></tr></table></div>`}
+        function render() {
+            const g = grp(), ks = [...new Set(ROWS.map(K))]; $('#ks').innerHTML = ks.map(k => `<option${k == cur ? ' selected' : ''}>${esc(k)}</option>`).join('');
+            $('#ls').innerHTML = g.map((r, i) => `<button data-i="${i}" class="${i == sel ? 'on' : ''}${r.status != 'confirmed' ? ' dim' : ''}">${esc(r.name)}<span class="t">${r.status == 'confirmed' ? r.total : r.status}</span></button>`).join('');
+            const r = g[sel]; $('#pv').innerHTML = !r ? '<p class="m">Import one or more CSV exports from the tracker.</p>' : r.status != 'confirmed' ? '<p class="m">This student is not confirmed, so there is nothing to print.</p>' :
+                (r.delivery_missed === undefined ? '<p class="m">This CSV has no missed-item columns. Re-export it from the updated tracker.</p>' : '') + `<div class="paper">${sheet(r, sel)}</div><p class="m">Notes override (one line per phrase; empty = automatic)</p><textarea id="ov" rows="3">${esc(OV[okey(r)] || '')}</textarea>`
+        }
+        function doPrint(list) { if (!list.length) return alert('Nothing confirmed to print.'); let h = ''; for (let i = 0; i < list.length; i += 2)h += `<section class="page"><div class="slot">${sheet(list[i][0], list[i][1])}</div><div class="slot">${list[i + 1] ? sheet(list[i + 1][0], list[i + 1][1]) : ''}</div></section>`; $('#pa').innerHTML = h; print() }
+        document.addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b) return; if (b.dataset.i != null) { sel = +b.dataset.i; render(); return } const g = grp();
+            if (b.dataset.a == 'all') doPrint(g.map((r, i) => [r, i]).filter(([r]) => r.status == 'confirmed'));
+            if (b.dataset.a == 'one' && g[sel] && g[sel].status == 'confirmed') doPrint([[g[sel], sel]]);
+            if (b.dataset.a == 'pbs') { try { PB = JSON.parse($('#pb').value); localStorage.setItem('rubricPrint.pb', JSON.stringify(PB)); render() } catch (_) { alert('Invalid JSON') } }
+            if (b.dataset.a == 'pbr') { PB = PBD; localStorage.removeItem('rubricPrint.pb'); $('#pb').value = JSON.stringify(PB, null, 1); render() }
+        });
+        $('#ks').onchange = e => { cur = e.target.value; sel = 0; render() };
+        $('#f').onchange = async e => { for (const f of e.target.files) ROWS.push(...parseCSV(await f.text())); cur = cur || K(ROWS[0] || {}); sel = 0; render() };
+        document.addEventListener('input', e => { if (e.target.id != 'ov') return; const r = grp()[sel]; OV[okey(r)] = e.target.value; localStorage.setItem('rubricPrint.ov', JSON.stringify(OV)); const p = document.querySelector('.paper'); p.innerHTML = sheet(r, sel) });
+        $('#pb').value = JSON.stringify(PB, null, 1);
+    </script>
+</body>
+
+</html>

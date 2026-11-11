@@ -457,13 +457,14 @@
         }
 
         function mut(f) { const r = rec(); if (r.status == 'confirmed') return; f(r); if (r.status == 'pending') r.status = 'draft'; save(); render() }
-        const COLS = 'semester,class,assessment,student_id,name,status,seconds,used_phone,read_80pct,creative,cohesion,grammar,delivery,ppt,grammar_types,grammar_examples,penalty_total,total,higher_scoring,lower_scoring,notes,confirmed_at'.split(',');
+        const COLS = 'semester,class,assessment,student_id,name,status,seconds,used_phone,read_80pct,creative,cohesion,grammar,delivery,ppt,grammar_types,grammar_examples,penalty_total,total,higher_scoring,lower_scoring,notes,confirmed_at,assigned_sec,delivery_missed,ppt_missed,meaning_lost,pen_time,pen_late_presentation,pen_late_ppt,pen_revisions'.split(',');
 
         const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v };
+        const miss = o => Object.keys(o).filter(p => !o[p]).join('; ');
         function rows(sem, cls, asm) {
             const s = DB.semesters[sem], c = s.classes[cls]; return c.roster.map(st => {
                 const r = c.records[asm]?.[st.id]; let o = [s.label, cls, asm, st.id, st.name, r?.status || 'pending'];
-                if (r?.status == 'confirmed') { const k = calc(r, c, asm), ts = [...new Set(r.errors.map(e => e.type))], sm = summ(r, k); o.push(Math.round(r.sec), +r.phone, +r.read80, k.S.creative, k.S.cohesion, k.S.grammar, k.S.delivery, k.S.ppt, ts.join('; '), ts.filter(t => r.examples[t]).map(t => t + ': ' + r.examples[t]).join(' | '), k.pen, k.total, sm.hi, sm.lo, r.note, new Date(r.confirmedAt).toISOString()) }
+                if (r?.status == 'confirmed') { const k = calc(r, c, asm), ts = [...new Set(r.errors.map(e => e.type))], sm = summ(r, k); o.push(Math.round(r.sec), +r.phone, +r.read80, k.S.creative, k.S.cohesion, k.S.grammar, k.S.delivery, k.S.ppt, ts.join('; '), ts.filter(t => r.examples[t]).map(t => t + ': ' + r.examples[t]).join(' | '), k.pen, k.total, sm.hi, sm.lo, r.note, new Date(r.confirmedAt).toISOString(), c.settings.assignedSec[asm] || 210, miss(r.delivery), miss(r.ppt), r.errors.filter(e => e.meaning).length, k.len, r.latePresent, r.pptLateDays, Math.max(0, r.revisions - 1) + (r.notesOnlyRev ? 1 : 0)) }
                 while (o.length < COLS.length) o.push(''); return o.map(q).join(',')
             })
         }
