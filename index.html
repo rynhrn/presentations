@@ -328,7 +328,8 @@
             return `<div class="row" style="margin-bottom:10px">${c.settings.assessments.map(x => btn('go', H('s', P.sem, 'c', P.cls, x), x, x == P.asm ? 'on' : '')).join('')}${btn('go', B() + '/settings', 'Settings')}</div>` +
                 (!c.roster.length ? '<div class="card">No students yet. Open Settings to import a roster.</div>' : nx ? btn('go', B() + '/st/' + nx.id, 'Continue: ' + esc(nx.name), 'p', 'style="width:100%;margin-bottom:10px"') : '<div class="card">All students confirmed.</div>') +
                 c.roster.map(r => { const x = rs[r.id], st = x?.status || 'pending'; return `<button class="li" data-a="go" data-v="${esc(B() + '/st/' + r.id)}"><i class="dot ${st}"></i><span class="g">${r.id} ${esc(r.name)}</span><span class="m">${x && x.sec ? SEC(x.sec) : ''}${st == 'confirmed' ? ' · ' + calc(x, c, P.asm).total + '/20' : ''}</span></button>` }).join('') +
-                `<div class="row" style="margin-top:12px">${btn('csv', '', 'Export CSV')}${btn('csvCopy', '', 'Copy CSV')}</div>`
+                `<div class="row" style="margin-top:12px">${btn('csv', '', 'Export CSV')}${btn('csvCopy', '', 'Copy CSV')}</div>` +
+                `<div style="margin-top:12px">${btn('resetAll', '', 'Reset all scores', 'd', 'style="width:100%"')}</div>`
         }
         const GL = { fluency: 'Fluency', tone: 'Tone', gestures: 'Gestures', eye: 'Eye contact', stance: 'Stance' }, PL = { readable: 'Readable', text: 'Restrained Text', visuals: 'Useful Visuals', purpose: 'Clear Purpose' }, CN = { creative: 'Creative ideas', cohesion: 'Cohesion', grammar: 'Grammar and pronunciation', delivery: 'Delivery', ppt: 'PPT' };
         function rubric(r, k, d) {
@@ -359,8 +360,10 @@
             const r = rec(), k = calc(r, c, P.asm), as = c.settings.assignedSec[P.asm] || 210, lk = r.status == 'confirmed' ? 'disabled' : '', cnt = t => r.errors.filter(e => e.type == t).length, last = r.errors.at(-1);
             const chips = g => c.settings.chips[g].map(t => { const count = cnt(t); return `<button data-a="chip" class="chip${count ? ' selected' : ''}" data-v="${esc(t)}" ${lk}>${esc(t)}${count ? ' ×' + count : ''}</button>` }).join('');
             return `
-            <b>${esc(s.name)}</b> 
-            <span class="m">${s.id} · ${i + 1}/${c.roster.length}</span>
+            <div class="row" style="justify-content:space-between">
+                <span><b>${esc(s.name)}</b> <span class="m">${s.id} · ${i + 1}/${c.roster.length}</span></span>
+                ${btnSmall('resetStudent', '', 'Reset scores', 'd')}
+            </div>
             <div class="card" style="margin-top:10px">
                 <div class="row" style="justify-content:space-between;align-items:center;">
                     <div class="g">
@@ -485,6 +488,20 @@
                 case 'newCls': { const l = prompt('Class name (for example 8C2)'); if (!l) break; const k = slug(l); if (S().classes[k]) { alert('That class already exists.'); break } S().classes[k] = { roster: [], settings: newCfg(), records: {} }; save(); location.hash = H('s', P.sem, 'c', k, 'S1') + '/settings'; break }
                 case 'delCls': if (confirm('Delete this class and all its records?')) { delete S().classes[P.cls]; save(); location.hash = H('s', P.sem) } break;
                 case 'imp': { const c = C(); $('#imp').value.split('\n').forEach(l => { const x = l.split(',').map(y => y.trim()), id = +x[0]; if (!id) return; const o = c.roster.find(r => r.id == id); if (o) { o.name = x[1] || o.name; o.korean = x[2] || o.korean } else c.roster.push({ id, name: x[1] || String(id), korean: x[2] || '' }) }); c.roster.sort((a, b) => a.id - b.id); save(); render(); break }
+                case 'resetStudent': {
+                    const c = C(), s = c.roster.find(x => x.id == P.id);
+                    if (!confirm(`Reset scores and status for ${s?.name || P.id} in ${P.asm}? This clears all scoring details, notes, and timer data.`)) break;
+                    if (c.records[P.asm]) delete c.records[P.asm][P.id];
+                    if (DB.running?.sem == P.sem && DB.running?.cls == P.cls && DB.running?.asm == P.asm && DB.running?.id == P.id) { DB.running = null; wl(false) }
+                    save(); render(); break;
+                }
+                case 'resetAll': {
+                    const c = C();
+                    if (!confirm(`Reset scores and status for all students in ${P.cls} (${P.asm})? This clears all scoring details, notes, and timer data for this assessment.`)) break;
+                    c.records[P.asm] = {};
+                    if (DB.running?.sem == P.sem && DB.running?.cls == P.cls && DB.running?.asm == P.asm) { DB.running = null; wl(false) }
+                    save(); render(); break;
+                }
                 case 'start': mut(r => { const n = DB.running, o = n && DB.semesters[n.sem]?.classes[n.cls]?.records[n.asm]?.[n.id]; if (o && o !== r) stopRec(o); r.startedAt = Date.now(); DB.running = { sem: P.sem, cls: P.cls, asm: P.asm, id: P.id }; wl(true) }); break;
                 case 'stop': mut(r => { stopRec(r); DB.running = null; wl(false) }); break;
                 case 'rst': if (confirm('Reset timer to 0:00?')) mut(r => { r.sec = 0 }); break;
